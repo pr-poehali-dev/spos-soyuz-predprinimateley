@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Icon from "@/components/ui/icon";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -68,6 +68,18 @@ const Index = () => {
               Присоединиться к СПО
               <Icon name="ArrowRight" className="ml-2" size={20} />
             </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-white border-b-4 border-accent">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8">
+              <StatCounter end={5000} duration={2000} suffix="+" label="Членов движения" icon="Users" />
+              <StatCounter end={47} duration={2000} label="Регионов России" icon="MapPin" />
+              <StatCounter end={120} duration={2000} suffix="+" label="Реализованных инициатив" icon="Target" />
+            </div>
           </div>
         </div>
       </section>
@@ -359,6 +371,64 @@ const Index = () => {
           </div>
         </div>
       </footer>
+    </div>
+  );
+};
+
+const StatCounter = ({ end, duration, suffix = "", label, icon }: { end: number; duration: number; suffix?: string; label: string; icon: string }) => {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isVisible) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    const element = document.getElementById(`stat-${label}`);
+    if (element) observer.observe(element);
+
+    return () => observer.disconnect();
+  }, [label, isVisible]);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    let startTime: number;
+    const startValue = 0;
+    const endValue = end;
+
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentCount = Math.floor(startValue + (endValue - startValue) * easeOutQuart);
+
+      setCount(currentCount);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [isVisible, end, duration]);
+
+  return (
+    <div id={`stat-${label}`} className="text-center p-8 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl border-2 border-primary/10 hover:border-accent/50 transition-all hover:shadow-lg">
+      <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <Icon name={icon} className="text-white" size={32} />
+      </div>
+      <div className="text-5xl font-bold text-primary mb-2">
+        {count.toLocaleString()}{suffix}
+      </div>
+      <p className="text-muted-foreground font-semibold">{label}</p>
     </div>
   );
 };
